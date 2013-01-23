@@ -16,14 +16,14 @@ public class TransactionalFileInputStream extends InputStream implements Seriali
 	private String fileName;
 	private Integer readSize;
 	private FileInputStream fin;
-	public TransactionalFileInputStream(String fileName,Integer readSize) {
+	public TransactionalFileInputStream(String fileName) {
 		super();
 		this.fileName = fileName;
-		//readSize=0;
-		this.readSize=readSize;
+		readSize=0;
+		
 		try {
 			fin=new FileInputStream(fileName);
-			fin.skip(readSize);
+			
 		}catch(IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -34,8 +34,18 @@ public class TransactionalFileInputStream extends InputStream implements Seriali
 	public int read() throws IOException {
 		// TODO Auto-generated method stub
 		readSize++;
-		System.out.println(readSize);
 		return fin.read();
+	}
+
+	public TransactionalFileInputStream() {
+		super();
+		try {
+			fin=new FileInputStream(fileName);
+			fin.skip(readSize);
+		}catch(IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }
