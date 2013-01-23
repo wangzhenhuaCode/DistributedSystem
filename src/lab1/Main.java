@@ -10,12 +10,12 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		TransactionalFileInputStream in=new TransactionalFileInputStream("text.txt",0);
+		TransactionalFileInputStream in=new TransactionalFileInputStream("c:\\test.txt",4);
 		DataInputStream is = new DataInputStream(in);
 		try {
 			int b=is.read();
 			while(b!=-1){
-				System.out.println(b);
+				System.out.print(b+" ");
 				b=is.read();
 			};
 		} catch (IOException e) {

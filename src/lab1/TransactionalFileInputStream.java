@@ -9,10 +9,7 @@ import java.io.Serializable;
 
 public class TransactionalFileInputStream extends InputStream implements Serializable{
 	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+	
 	private String fileName;
 	private Integer readSize;
 	private FileInputStream fin;
@@ -34,7 +31,7 @@ public class TransactionalFileInputStream extends InputStream implements Seriali
 	public int read() throws IOException {
 		// TODO Auto-generated method stub
 		readSize++;
-		System.out.println(readSize);
+		System.out.print(readSize+" ");
 		return fin.read();
 	}
 

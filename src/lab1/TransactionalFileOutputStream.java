@@ -8,7 +8,7 @@ public class TransactionalFileOutputStream extends OutputStream implements Seria
 	private String filename;
 	private boolean result;
 	
-	private static final long serialVersionUID = -7131932025690436925L;
+	
 
 	
 	public TransactionalFileOutputStream(String filename, boolean result){
