@@ -1,4 +1,6 @@
+import java.io.Serializable;
 
-public interface MigratableProcess extends Runnable {
+
+public interface MigratableProcess extends Runnable,Serializable {
 
 }
