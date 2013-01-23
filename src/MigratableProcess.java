@@ -1,4 +1,4 @@
 
-public interface MigratableProcess {
+public interface MigratableProcess extends Runnable {
 
 }
