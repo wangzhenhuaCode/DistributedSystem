@@ -6,6 +6,11 @@ import java.io.Serializable;
 
 
 public class TransactionalFileInputStream extends InputStream implements Serializable{
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7779242789718779893L;
 	private String fileName;
 	public TransactionalFileInputStream(String fileName) {
 		super();
