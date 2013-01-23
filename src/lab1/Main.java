@@ -48,8 +48,10 @@ public class Main {
 					str.add(s);
 				}else{
 					System.out.print("invalid args");
+					return;
 				}
 			}
+			launchProcess(str);
 			
 		}
 		
@@ -68,7 +70,7 @@ public class Main {
 		Class<?> interfaces[]=processClass.getInterfaces();
 		boolean impl=false;
 		for(int i=0;i<interfaces.length;i++){
-			if(interfaces[i].getName().equals("MigratableProcess")){
+			if(interfaces[i].getName().contains("MigratableProcess")){
 				impl=true;
 				break;
 			}
@@ -113,15 +115,27 @@ public class Main {
 					}
 				}
 				if(findConstructor){
-					try {
-						instance=constructors[i].newInstance(argslist);
-					} catch (IllegalArgumentException | InstantiationException
-							| IllegalAccessException
-							| InvocationTargetException e) {
-						// TODO Auto-generated catch block
-						findConstructor=false;
-						break;
-					}
+			
+						try {
+							instance=constructors[i].newInstance(argslist.toArray());
+						} catch (IllegalArgumentException e) {
+							// TODO Auto-generated catch block
+							findConstructor=false;
+							break;
+						} catch (InstantiationException e) {
+							// TODO Auto-generated catch block
+							findConstructor=false;
+							break;
+						} catch (IllegalAccessException e) {
+							// TODO Auto-generated catch block
+							findConstructor=false;
+							break;
+						} catch (InvocationTargetException e) {
+							// TODO Auto-generated catch block
+							findConstructor=false;
+							break;
+						}
+					
 					
 					break;
 				}
