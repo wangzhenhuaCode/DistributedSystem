@@ -1,13 +1,18 @@
 package lab1;
 
+import java.net.ServerSocket;
+import java.net.Socket;
+
 public class SocketConnection {
 
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
+	private ServerSocket serversocket;
+	private Socket clientsocket;
+	public SocketConnection(){
+		
+		
 	}
 
 }
