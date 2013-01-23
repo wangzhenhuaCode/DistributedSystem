@@ -1,8 +1,5 @@
 package lab1;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-
 public class Main {
 
 	/**
