@@ -4,6 +4,9 @@ import java.io.File;
 import java.net.Socket;
 
 public class Message {
+	static int REQUESTTYPE_NEW_SLAVE=1;
+	static int REQUESTTYPE_SLAVE_UPDATE=2;
+	static int REQUESTTYPE_NOTIFY_MIGRATION=3;
 	
 	private int requestType;
 	private long FileLen;
@@ -11,6 +14,8 @@ public class Message {
 	private String content;
 	private String fileName;
 	private Socket socket;
+	private String destinationHostName;
+	private int destinationPort;
 	public int getRequestType() {
 		return requestType;
 	}
@@ -47,6 +52,19 @@ public class Message {
 	}
 	public void setContentLen(long contentLen) {
 		this.contentLen = contentLen;
+	}
+
+	public int getDestinationPort() {
+		return destinationPort;
+	}
+	public void setDestinationPort(int destinationPort) {
+		this.destinationPort = destinationPort;
+	}
+	public String getDestinationHostName() {
+		return destinationHostName;
+	}
+	public void setDestinationHostName(String destinationHostName) {
+		this.destinationHostName = destinationHostName;
 	}
 
 	

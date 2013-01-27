@@ -15,10 +15,14 @@ public class Main {
 	 * @param args
 	 */
 	static ThreadPool threadPool;
+	static SocketConnection connection;
 	public static void main(String[] args) {
 
 		// TODO Auto-generated method stub
 		threadPool=new ThreadPool(5);
+		connection=new SocketConnection();
+		Thread t=new Thread(connection);
+		t.start();
 		byte[] buffer=new byte[1024];
 		int n=0;
 		

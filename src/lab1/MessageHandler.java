@@ -3,7 +3,9 @@ package lab1;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Date;
 import java.util.LinkedList;
@@ -29,6 +31,7 @@ public class MessageHandler {
 					currentMessage=recevieMessageQueue.poll();
 				}
 				try {
+					
 					InputStream in=currentMessage.getSocket().getInputStream();
 					
 					int requestType=in.read();
@@ -64,7 +67,7 @@ public class MessageHandler {
 							byte contentBuffer[]=new byte[bufferSize];
 							in.read(contentBuffer);
 							content=content+new String(contentBuffer);
-							len-=1024;
+							len-=bufferSize;
 						}
 						message.setContent(content);
 					}
@@ -82,13 +85,13 @@ public class MessageHandler {
 							byte contentBuffer[]=new byte[bufferSize];
 							in.read(contentBuffer);
 							inFile.write(contentBuffer);
-							len-=1024;
+							len-=bufferSize;
 						}
 						inFile.close();
 						message.setFileName(fileName);
 						
 					}
-					
+					in.close();
 					currentMessage.getSocket().close();
 					
 					
@@ -106,6 +109,9 @@ public class MessageHandler {
 				
 				return(0xffL & (long)bytes[0]) | (0xff00L & ((long)bytes[1] << 8)) | (0xff0000L & ((long)bytes[2] << 16)) | (0xff000000L & ((long)bytes[3] << 24)) | (0xff00000000L & ((long)bytes[4] << 32)) | (0xff0000000000L & ((long)bytes[5] << 40)) | (0xff000000000000L & ((long)bytes[6] << 48)) | (0xff00000000000000L & ((long)bytes[7] << 56));
 			}
+			private void processMessage(Message m){
+				
+			}
 		
 	}
 	
@@ -115,9 +121,80 @@ public class MessageHandler {
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			
+			while(!isStop){
+				synchronized(sendingMessageQueue){
+					while(sendingMessageQueue.isEmpty()){
+						try {
+							sendingMessageQueue.wait();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					currentMessage=sendingMessageQueue.poll();
+					
+				}
+				
+				try {
+					currentMessage.setSocket(new Socket());
+					currentMessage.getSocket().connect(new InetSocketAddress(currentMessage.getDestinationHostName(),currentMessage.getDestinationPort()));
+					OutputStream out=currentMessage.getSocket().getOutputStream();
+					out.write((byte)currentMessage.getRequestType());
+					
+					long contentLen=0;
+					String content=currentMessage.getContent();
+					byte contentBuffer[]=content.getBytes();
+					if(content!=null&&!content.equals("")){
+						contentLen=(long)contentBuffer.length;
+						currentMessage.setContentLen(contentLen);
+					}
+					out.write(longToByte(contentLen));
+					
+					String fileName=currentMessage.getFileName();
+					RandomAccessFile inFile=null;
+					long fileLen=0;
+					if(fileName!=null&&!fileName.equals("")){
+						inFile=new RandomAccessFile(currentMessage.getFileName(),"r");
+						fileLen=inFile.length();
+						currentMessage.setFileLen(fileLen);
+					}
+					out.write(longToByte(fileLen));
+					if(contentLen>0){
+						out.write(currentMessage.getContent().getBytes());
+					}
+					if(fileLen>0){
+						long len=fileLen;
+						int bufferSize;
+						while(len>0){
+							if(len>1024)
+								bufferSize=1024;
+							else 
+								bufferSize=(int) len;
+							byte buffer[]=new byte[1024];
+							inFile.read(buffer);
+							out.write(buffer);
+							len-=bufferSize;
+						}
+						inFile.close();
+					}
+					out.flush();
+					out.close();
+					currentMessage.getSocket().close();
+					
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 		}
-		
+		private byte[] longToByte(long n){
+			byte[] b = new byte[8];   
+		    for (int i = 7; i >= 0; i--) {   
+		      b[i] = (byte) (n % 256);   
+		      n >>= 8;   
+		    }   
+		    return b;   
+		}
 	}
 	
 	private LinkedList<Message> recevieMessageQueue;
@@ -132,7 +209,8 @@ public class MessageHandler {
 		Thread t=new Thread(receiveProcessor);
 		t.start();
 		sendingProcessor=new SendMessageProcessor();
-		
+		Thread t2=new Thread(sendingProcessor);
+		t2.start();
 		
 	}
 	public void processReceivedNewMessage(Message message){
@@ -141,7 +219,12 @@ public class MessageHandler {
 			recevieMessageQueue.notify();
 		}
 	}
-	public
+	public void sendMessage(Message message){
+		synchronized(sendingMessageQueue){
+			sendingMessageQueue.add(message);
+			sendingMessageQueue.notify();
+		}
+	}
 
 
 }
