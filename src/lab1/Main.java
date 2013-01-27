@@ -8,18 +8,20 @@ import java.util.ArrayList;
 
 
 
+
 public class Main {
 
 	/**
 	 * @param args
 	 */
-	static ArrayList<MigratableProcess> processList;
+	static ThreadPool threadPool;
 	public static void main(String[] args) {
 
 		// TODO Auto-generated method stub
+		threadPool=new ThreadPool(5);
 		byte[] buffer=new byte[1024];
 		int n=0;
-		processList=new ArrayList<MigratableProcess>();
+		
 		System.out.println("Welcome to Process Monitor");
 		while(true){
 			try{
@@ -29,7 +31,7 @@ public class Main {
 				System.out.println("Bye!");
 				break;
 			}else{
-				interaction(command);
+				parseComand(command);
 			}
 				
 			}catch(Exception e){
@@ -38,9 +40,9 @@ public class Main {
 		}
 	}
 
-	public static void interaction(String command) {
+	public static void parseComand(String command) {
 		if(command.equals("ps")){
-			//count process
+			threadPool.showStatus();
 		}else {
 			ArrayList<String> str = new ArrayList<String>();
 			for(String s : command.split(" ")){
@@ -143,11 +145,10 @@ public class Main {
 		}
 		if(!findConstructor||instance==null){
 			System.out.println("Invalid arguments!");
+			System.out.println();
 			return;
 		}
-		Thread thread=new Thread((Runnable)instance);
-		processList.add((MigratableProcess) instance);
-		thread.start();
+		threadPool.addTask((MigratableProcess) instance);
 		
 		
 		}

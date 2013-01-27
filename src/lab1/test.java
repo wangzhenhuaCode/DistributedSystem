@@ -1,8 +1,9 @@
 package lab1;
 
 public class test implements MigratableProcess{
+	private String name;
 	public test(String arg0){
-		System.out.print("1");
+		this.name=arg0;
 	}
 	public test(String arg0, String arg1){
 		System.out.print("2");
@@ -23,18 +24,18 @@ public class test implements MigratableProcess{
 	
 	@Override
 	public void run() {
-		
-			for(int i=0; i<10; i++){
+		System.out.println(name+":  start");
+			for(int i=0; i<20; i++){
 				try {
 					Thread.currentThread();
-					Thread.sleep(100);
+					Thread.sleep(2000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				System.out.print(i);
+				
 			}
-			
+			System.out.println(name+":  end");
 		
 		
 	}
