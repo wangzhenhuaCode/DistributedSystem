@@ -4,9 +4,12 @@ import java.io.File;
 import java.net.Socket;
 
 public class Message {
-	static int REQUESTTYPE_NEW_SLAVE=1;
-	static int REQUESTTYPE_SLAVE_UPDATE=2;
-	static int REQUESTTYPE_NOTIFY_MIGRATION=3;
+	
+	static final int REQUESTTYPE_SLAVE_UPDATE=1;
+	static final int REQUESTTYPE_NOTIFY_MIGRATION=2;
+	static final int REQUESTTYPE_MASTER_UPDATE=3;
+	static final int REQUESTTYPE_MIGRATION=4;
+	static final int REQUESTTYPE_SLAVE_CHANGE_PORT=5;
 	
 	private int requestType;
 	private long FileLen;

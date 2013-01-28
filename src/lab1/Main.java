@@ -4,6 +4,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+
+import javax.swing.event.ListSelectionEvent;
 
 
 
@@ -16,6 +19,7 @@ public class Main {
 	 */
 	static ThreadPool threadPool;
 	static SocketConnection connection;
+	static MasterSlaveControl masterslavecontrol;
 	public static void main(String[] args) {
 
 		// TODO Auto-generated method stub
@@ -23,6 +27,7 @@ public class Main {
 		connection=new SocketConnection();
 		Thread t=new Thread(connection);
 		t.start();
+		masterslavecontrol=new MasterSlaveControl();
 		byte[] buffer=new byte[1024];
 		int n=0;
 		
@@ -45,25 +50,26 @@ public class Main {
 	}
 
 	public static void parseComand(String command) {
-		if(command.equals("ps")){
+		String args[]=command.split("\\s+");
+		if(args[0].equals("ps")){
 			threadPool.showStatus();
-		}else {
-			ArrayList<String> str = new ArrayList<String>();
-			for(String s : command.split(" ")){
-				if(s.length() > 0){
-					str.add(s);
-				}else{
-					System.out.print("invalid args");
-					return;
-				}
+		}else if(args[0].equals("-c")){
+			String args2[]=args[1].split(":");
+			if(args2.length==2)
+				masterslavecontrol.beSlave(args2[0], Integer.valueOf(args2[1]));
+			else{
+				System.out.println("Incorrect address!");
+				System.out.println("Format:-c masterHostname:portNum");
 			}
-			launchProcess(str);
+		}else {
+			
+			launchProcess(args);
 			
 		}
 		
 	}
-	public static void launchProcess(ArrayList<String> args){
-		String className=args.get(0);
+	public static void launchProcess(String[] args){
+		String className=args[0];
 		Class<?> processClass;
 		try {
 			processClass=Class.forName(className)
@@ -91,26 +97,26 @@ public class Main {
 		Object instance = null;
 		for(int i=0;i<constructors.length;i++){
 			paramaters=constructors[i].getParameterTypes();
-			if(paramaters.length==args.size()-1){
+			if(paramaters.length==args.length-1){
 				ArrayList<Object> argslist=new ArrayList<Object>();
 				findConstructor=true;
 				for(int j=0;j<paramaters.length;j++){
 					String c=paramaters[j].toString();
 					try{
 						if(c.equals(Integer.class.toString())){
-							argslist.add(Integer.valueOf(args.get(j+1)));
+							argslist.add(Integer.valueOf(args[j+1]));
 						}else if(c.equals(Double.class.toString())){
-							argslist.add(Double.valueOf(args.get(j+1)));
+							argslist.add(Double.valueOf(args[j+1]));
 						}else if(c.equals(Boolean.class.toString())){
-							argslist.add(Boolean.valueOf(args.get(j+1)));
+							argslist.add(Boolean.valueOf(args[j+1]));
 						}else if(c.equals(String.class.toString())){
-							argslist.add(args.get(j+1));
+							argslist.add(args[j+1]);
 						}else if(c.equals(int.class.toString())){
-							argslist.add(Integer.valueOf(args.get(j+1)));
+							argslist.add(Integer.valueOf(args[j+1]));
 						}else if(c.equals(double.class.toString())){
-							argslist.add(Double.valueOf(args.get(j+1)));
+							argslist.add(Double.valueOf(args[j+1]));
 						}else if(c.equals(boolean.class.toString())){
-							argslist.add(Boolean.valueOf(args.get(j+1)));
+							argslist.add(Boolean.valueOf(args[j+1]));
 						}else{
 							findConstructor=false;
 							break;

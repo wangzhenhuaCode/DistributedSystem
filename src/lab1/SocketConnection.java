@@ -1,8 +1,10 @@
 package lab1;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class SocketConnection implements Runnable{
 
@@ -10,9 +12,17 @@ public class SocketConnection implements Runnable{
 	 * @param args
 	 */
 	static int SOCKET_PORT=9213;
+	static String LOCAL_HOSTNAME;
 	private ServerSocket serversocket;
 	private MessageHandler messageHandler;
 	public SocketConnection(){
+		try {
+			InetAddress addr = InetAddress.getLocalHost();
+			LOCAL_HOSTNAME=addr.getHostAddress();
+		} catch (UnknownHostException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		messageHandler=new MessageHandler();
 		try {
 			serversocket=new ServerSocket(SOCKET_PORT);

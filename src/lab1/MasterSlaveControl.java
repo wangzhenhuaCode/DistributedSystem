@@ -8,13 +8,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MasterSlaveControl {
-	private Boolean isSlave;
-	private Boolean isMaster;
+	private AtomicBoolean isSlave=new AtomicBoolean();
+	private AtomicBoolean isMaster=new AtomicBoolean();
 	private String masterHostname;
 	private int masterPort;
-	private String localHostName;
+	
 	private HashMap<String,Slave> slavemap;
 	class Slave{
 		String hostname;
@@ -31,16 +32,10 @@ public class MasterSlaveControl {
 		
 	}
 	public MasterSlaveControl(){
-		isSlave=false;
-		isMaster=false;
+		isSlave.set(false);
+		isMaster.set(false);
 		slavemap=new HashMap<String,Slave>();
-		try {
-			InetAddress addr = InetAddress.getLocalHost();
-			localHostName=addr.getHostAddress();
-		} catch (UnknownHostException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		
 		Thread salveUpdate=new Thread(new Runnable(){
 
 			@Override
@@ -48,7 +43,7 @@ public class MasterSlaveControl {
 				// TODO Auto-generated method stub
 				while(true){
 					synchronized(isSlave){
-						while(!isSlave){
+						while(!isSlave.get()){
 							try {
 								isSlave.wait();
 							} catch (InterruptedException e) {
@@ -58,7 +53,7 @@ public class MasterSlaveControl {
 						}
 					}
 					Message m=new Message();
-					String content=localHostName+":"+SocketConnection.SOCKET_PORT;
+					String content=SocketConnection.LOCAL_HOSTNAME+" "+SocketConnection.SOCKET_PORT+" "+Main.threadPool.getProcessNum();
 					m.setContent(content);
 					m.setRequestType(Message.REQUESTTYPE_SLAVE_UPDATE);
 					m.setDestinationHostName(masterHostname);
@@ -81,7 +76,7 @@ public class MasterSlaveControl {
 			public void run() {
 				// TODO Auto-generated method stub
 				synchronized(isMaster){
-					while(!isMaster){
+					while(!isMaster.get()){
 						try {
 							isMaster.wait();
 						} catch (InterruptedException e) {
@@ -127,15 +122,29 @@ public class MasterSlaveControl {
 					}
 				}
 				Slave s1=list.get(0),s2=list.get(list.size()-1);
+				int myprocessNum=Main.threadPool.getProcessNum();
 				int diff=s2.processNum-s1.processNum;
-				if(diff>1){
-					int migrateNum=diff/2;
-					Message m=new Message();
-					m.setRequestType(Message.REQUESTTYPE_NOTIFY_MIGRATION);
-					m.setDestinationHostName(s2.hostname);
-					m.setDestinationPort(s2.port);
-					m.setContent(s1.hostname+" "+s1.port+" "+migrateNum);
-					Main.connection.getMessageHandler().sendMessage(m);
+				String largeHostname=s2.hostname,smallHostname=s1.hostname;
+				int largePort=s2.port,smallPort=s1.port;
+				if(myprocessNum>s2.processNum){
+					diff=myprocessNum-s1.processNum;
+					largePort=SocketConnection.SOCKET_PORT;
+					largeHostname=SocketConnection.LOCAL_HOSTNAME;
+				}else if(myprocessNum<s1.processNum){
+					diff=s2.processNum-myprocessNum;
+					smallPort=SocketConnection.SOCKET_PORT;
+					smallHostname=SocketConnection.LOCAL_HOSTNAME;
+				}
+					
+					if(diff>1){
+						int migrateNum=diff/2;
+						Message m=new Message();
+						m.setRequestType(Message.REQUESTTYPE_NOTIFY_MIGRATION);
+						m.setDestinationHostName(largeHostname);
+						m.setDestinationPort(largePort);
+						m.setContent(smallHostname+" "+smallPort+" "+migrateNum);
+						Main.connection.getMessageHandler().sendMessage(m);
+					
 				}
 				try {
 					Thread.sleep(6000);
@@ -144,15 +153,23 @@ public class MasterSlaveControl {
 					e.printStackTrace();
 				}
 				
+				
 			}
 			
 		});
+		masterCheck.start();
 	}
 	public void beSlave(String hostName,int port){
 		synchronized(isSlave){
 			this.masterHostname=hostName;
 			this.masterPort=port;
-			isSlave=true;
+			isSlave.set(true);
+			Message m=new Message();
+			m.setRequestType(Message.REQUESTTYPE_SLAVE_UPDATE);
+			m.setContent(SocketConnection.LOCAL_HOSTNAME+" "+SocketConnection.SOCKET_PORT+" "+Main.threadPool.getProcessNum());
+			m.setDestinationHostName(masterHostname);
+			m.setDestinationPort(masterPort);
+			Main.connection.getMessageHandler().sendMessage(m);
 			isSlave.notify();
 		}
 	}
@@ -162,7 +179,7 @@ public class MasterSlaveControl {
 				slavemap.put(hostname+":"+port,new Slave(hostname,port,true,processNum) );
 				slavemap.notify();
 			}
-			isMaster=true;
+			isMaster.set(true);
 			isMaster.notify();
 		}
 	}

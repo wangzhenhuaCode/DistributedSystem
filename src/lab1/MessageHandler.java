@@ -1,8 +1,13 @@
 package lab1;
 
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
@@ -74,9 +79,9 @@ public class MessageHandler {
 					
 					if(message.getFileLen()>0){
 						long len=message.getFileLen();
-						String fileName=new Date().getTime()+"_"+currentMessage.hashCode()+".os";
+						String fileName=new Date().getTime()+"_"+currentMessage.hashCode()+".ser";
 						RandomAccessFile inFile=new RandomAccessFile(fileName,"rw");
-					
+						
 						while(len>0){
 							if(len>1024)
 								bufferSize=1024;
@@ -93,7 +98,7 @@ public class MessageHandler {
 					}
 					in.close();
 					currentMessage.getSocket().close();
-					
+					processMessage(currentMessage);
 					
 			        
 					
@@ -109,7 +114,84 @@ public class MessageHandler {
 				
 				return(0xffL & (long)bytes[0]) | (0xff00L & ((long)bytes[1] << 8)) | (0xff0000L & ((long)bytes[2] << 16)) | (0xff000000L & ((long)bytes[3] << 24)) | (0xff00000000L & ((long)bytes[4] << 32)) | (0xff0000000000L & ((long)bytes[5] << 40)) | (0xff000000000000L & ((long)bytes[6] << 48)) | (0xff00000000000000L & ((long)bytes[7] << 56));
 			}
-			private void processMessage(Message m){
+			private void processMessage(final Message m){
+				final String[] args=m.getContent().split(" ");
+				switch(m.getRequestType()){
+				case Message.REQUESTTYPE_SLAVE_UPDATE:
+					if(args.length==3)
+						Main.masterslavecontrol.addSlave(args[0], Integer.valueOf(args[1]), Integer.valueOf(args[2]));
+					break;
+				case Message.REQUESTTYPE_NOTIFY_MIGRATION:
+					
+					if(args.length==3){
+						Thread migrateThread=new Thread(new Runnable(){
+
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								Integer num=Integer.valueOf(args[2]);
+								for(int i=1;i<=num;i++){
+									MigratableProcess process=Main.threadPool.getSuspendedProcess();
+									String fileName=(new Date()).getTime()+"_"+m.hashCode()+".ser";
+									try {
+										
+										FileOutputStream fileOut=new FileOutputStream(fileName);
+										ObjectOutputStream out=new ObjectOutputStream(fileOut);
+										out.writeObject(process);
+										out.close();
+										fileOut.close();
+									} catch (IOException e) {
+										// TODO Auto-generated catch block
+										
+										e.printStackTrace();
+										return;
+									}
+									Message newMessage=new Message();
+									newMessage.setRequestType(Message.REQUESTTYPE_MIGRATION);
+									newMessage.setFileName(fileName);
+									newMessage.setContent(SocketConnection.LOCAL_HOSTNAME);
+									newMessage.setDestinationHostName(args[0]);
+									newMessage.setDestinationPort(Integer.valueOf(args[1]));
+									sendMessage(newMessage);
+									System.out.println(process.getClass().getName()+" has been migrated to "+args[0]+":"+args[1]);
+									
+								}
+							}
+							
+						});
+					}
+					break;
+						
+				case Message.REQUESTTYPE_MASTER_UPDATE:
+					if(args.length==2){
+						Main.masterslavecontrol.beSlave(args[0], Integer.valueOf(args[1]));
+					}
+					break;
+				case Message.REQUESTTYPE_MIGRATION:
+					if(args.length==1 && m.getFileName()!=null&&!m.getFileName().equals("")){
+						MigratableProcess process=null;;
+						try{
+						FileInputStream fileIn = new FileInputStream("employee.ser");
+						ObjectInputStream in = new ObjectInputStream(fileIn);
+						process = (MigratableProcess) in.readObject();
+						in.close();
+						fileIn.close();
+						}catch(IOException e){
+							e.printStackTrace();
+							return;
+						} catch (ClassNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+							return;
+						}
+						Main.threadPool.addTask(process);
+						System.out.println("Receive "+process.getClass().getName()+" from "+args[0]);
+					}
+					break;
+				case Message.REQUESTTYPE_SLAVE_CHANGE_PORT:
+					break;
+				
+				}
 				
 			}
 		
