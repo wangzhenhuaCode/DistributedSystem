@@ -2,6 +2,8 @@ package lab1;
 
 public class test implements MigratableProcess{
 	private String name;
+	private int i=0;
+	private volatile boolean stop=false;
 	public test(String arg0){
 		this.name=arg0;
 	}
@@ -25,7 +27,8 @@ public class test implements MigratableProcess{
 	@Override
 	public void run() {
 		System.out.println(name+":  start");
-			for(int i=0; i<20; i++){
+			while(i<20){
+				if(!stop){
 				try {
 					Thread.currentThread();
 					Thread.sleep(2000);
@@ -33,7 +36,8 @@ public class test implements MigratableProcess{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
+				i++;
+				}
 			}
 			System.out.println(name+":  end");
 		
@@ -43,7 +47,7 @@ public class test implements MigratableProcess{
 	@Override
 	public void suspend() {
 		// TODO Auto-generated method stub
-		
+		stop=true;
 	}
 	
 }
