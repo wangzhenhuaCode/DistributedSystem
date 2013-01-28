@@ -171,7 +171,7 @@ public class MessageHandler {
 					if(args.length==1 && m.getFileName()!=null&&!m.getFileName().equals("")){
 						MigratableProcess process=null;;
 						try{
-						FileInputStream fileIn = new FileInputStream("employee.ser");
+						FileInputStream fileIn = new FileInputStream(m.getFileName());
 						ObjectInputStream in = new ObjectInputStream(fileIn);
 						process = (MigratableProcess) in.readObject();
 						in.close();
