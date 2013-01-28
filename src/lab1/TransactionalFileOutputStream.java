@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 public class TransactionalFileOutputStream extends OutputStream implements Serializable{
 	private String filename;
-	private FileOutputStream fout;
+	private transient FileOutputStream fout;
 	private static final long serialVersionUID = 1L;
 
 
@@ -28,17 +28,11 @@ public class TransactionalFileOutputStream extends OutputStream implements Seria
 	@Override
 	public void write(int arg0) throws IOException {
 		// TODO Auto-generated method stub
+		if(fout==null){
+			fout=new FileOutputStream(filename,false);
+		}
 		fout.write(arg0);
 	}
-	public TransactionalFileOutputStream() throws IOException{
-		super();
-		try {
-		fout=new FileOutputStream(filename,false);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			throw e;
-		}
-	}
+	
 
 }
