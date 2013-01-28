@@ -159,6 +159,7 @@ public class MessageHandler {
 							}
 							
 						});
+						migrateThread.start();
 					}
 					break;
 						
