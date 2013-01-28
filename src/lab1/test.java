@@ -27,8 +27,8 @@ public class test implements MigratableProcess{
 	@Override
 	public void run() {
 		System.out.println(name+":  start");
-			while(i<20){
-				if(!stop){
+			while(!stop){
+				if(i<20){
 				try {
 					Thread.currentThread();
 					Thread.sleep(2000);
@@ -37,6 +37,8 @@ public class test implements MigratableProcess{
 					e.printStackTrace();
 				}
 				i++;
+				}else{
+					break;
 				}
 			}
 			System.out.println(name+":  end");
