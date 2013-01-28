@@ -46,7 +46,7 @@ public class MessageHandler {
 						currentMessage.getSocket().close();
 						continue;
 					}
-					Message message=new Message();
+					Message message=currentMessage;
 					message.setRequestType(requestType);
 					
 					
