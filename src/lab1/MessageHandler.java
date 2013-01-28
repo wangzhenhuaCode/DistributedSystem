@@ -17,8 +17,9 @@ import java.util.LinkedList;
 
 public class MessageHandler {
 	class ReceiveMessageProcessor implements Runnable{
-		private volatile boolean isStop;
+		private volatile boolean isStop=false;
 		private Message currentMessage;
+		
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
@@ -199,7 +200,7 @@ public class MessageHandler {
 	}
 	
 	class SendMessageProcessor implements Runnable{
-		private volatile boolean isStop;
+		private volatile boolean isStop=false;
 		private Message currentMessage;
 		@Override
 		public void run() {

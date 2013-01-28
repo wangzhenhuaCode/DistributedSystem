@@ -75,6 +75,7 @@ public class MasterSlaveControl {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
+				while(true){
 				synchronized(isMaster){
 					while(!isMaster.get()){
 						try {
@@ -155,7 +156,7 @@ public class MasterSlaveControl {
 				
 				
 			}
-			
+			}
 		});
 		masterCheck.start();
 	}
