@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.LinkedList;
 
@@ -112,8 +113,8 @@ public class MessageHandler {
 			
 		}
 			private long getLong(byte[] bytes){
-				
-				return(0xffL & (long)bytes[0]) | (0xff00L & ((long)bytes[1] << 8)) | (0xff0000L & ((long)bytes[2] << 16)) | (0xff000000L & ((long)bytes[3] << 24)) | (0xff00000000L & ((long)bytes[4] << 32)) | (0xff0000000000L & ((long)bytes[5] << 40)) | (0xff000000000000L & ((long)bytes[6] << 48)) | (0xff00000000000000L & ((long)bytes[7] << 56));
+				ByteBuffer bb=ByteBuffer.wrap(bytes);
+				return bb.getLong();
 			}
 			private void processMessage(final Message m){
 				final String[] args=m.getContent().split(" ");
@@ -272,12 +273,8 @@ public class MessageHandler {
 			}
 		}
 		private byte[] longToByte(long n){
-			byte[] b = new byte[8];   
-		    for (int i = 7; i >= 0; i--) {   
-		      b[i] = (byte) (n % 256);   
-		      n >>= 8;   
-		    }   
-		    return b;   
+			ByteBuffer bb = ByteBuffer.allocate(8);  
+	        return bb.putLong(n).array();  
 		}
 	}
 	
