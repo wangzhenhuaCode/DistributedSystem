@@ -32,6 +32,7 @@ public class Main {
 		int n=0;
 		
 		System.out.println("Welcome to Process Monitor");
+		System.out.println("Your address : "+SocketConnection.LOCAL_HOSTNAME+":"+SocketConnection.SOCKET_PORT);
 		while(true){
 			try{
 			n=System.in.read(buffer);
