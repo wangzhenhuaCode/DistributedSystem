@@ -113,6 +113,7 @@ public class MasterSlaveControl {
 					}
 					
 				});
+				
 				for(int i=0;i<list.size();i++){
 					Slave s=list.get(i);
 					if(s.updated==false){
@@ -122,6 +123,7 @@ public class MasterSlaveControl {
 						s.updated=false;
 					}
 				}
+				if(list.size()==0) continue;
 				Slave s1=list.get(0),s2=list.get(list.size()-1);
 				int myprocessNum=Main.threadPool.getProcessNum();
 				int diff=s2.processNum-s1.processNum;

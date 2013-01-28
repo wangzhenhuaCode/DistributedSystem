@@ -258,6 +258,7 @@ public class MessageHandler {
 							byte buffer[]=new byte[1024];
 							inFile.read(buffer);
 							out.write(buffer);
+							
 							len-=bufferSize;
 						}
 						inFile.close();

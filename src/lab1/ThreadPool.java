@@ -32,7 +32,7 @@ public class ThreadPool {
 					
 					mirgationLock.set(false);
 				}
-					work=null;
+					
 				synchronized(taskQueue){
 					while(taskQueue.isEmpty()){
 						try {
@@ -161,9 +161,10 @@ public class ThreadPool {
 		int n=(int) (Math.random()*workingNum);
 		MigratableProcess process=null;
 		Worker w=workerList.get(n);
+		w.getWork().suspend();
 		synchronized(w.needMigration){
 			w.needMigration.set(true);
-			w.getWork().suspend();
+			
 			synchronized(w.mirgationLock){
 				while(!w.mirgationLock.get()){
 					try {

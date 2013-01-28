@@ -2,7 +2,7 @@ package lab1;
 
 public class test implements MigratableProcess{
 	private String name;
-	private int i=0;
+	private Integer i=0;
 	private volatile boolean stop=false;
 	public test(String arg0){
 		this.name=arg0;
@@ -28,10 +28,10 @@ public class test implements MigratableProcess{
 	public void run() {
 		System.out.println(name+":  start");
 			while(!stop){
-				if(i<20){
+				if(i<10){
 				try {
-					Thread.currentThread();
-					Thread.sleep(2000);
+					System.out.println(name+" :"+i);
+					Thread.sleep(5000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -42,7 +42,7 @@ public class test implements MigratableProcess{
 				}
 			}
 			System.out.println(name+":  end");
-		
+			stop=false;
 		
 	}
 

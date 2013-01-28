@@ -23,6 +23,8 @@ public class Main {
 	public static void main(String[] args) {
 
 		// TODO Auto-generated method stub
+		if(args.length>0)
+			SocketConnection.SOCKET_PORT=Integer.valueOf(args[0]);
 		threadPool=new ThreadPool(5);
 		connection=new SocketConnection();
 		Thread t=new Thread(connection);
