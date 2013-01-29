@@ -220,9 +220,15 @@ public class MessageHandler {
 					
 				}
 				
-				try {
+				
 					currentMessage.setSocket(new Socket());
-					currentMessage.getSocket().connect(new InetSocketAddress(currentMessage.getDestinationHostName(),currentMessage.getDestinationPort()));
+					try {
+						currentMessage.getSocket().connect(new InetSocketAddress(currentMessage.getDestinationHostName(),currentMessage.getDestinationPort()));
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						System.out.println("Connection error!");
+					}
+					try {
 					OutputStream out=currentMessage.getSocket().getOutputStream();
 					out.write((byte)currentMessage.getRequestType());
 					
