@@ -40,7 +40,8 @@ public class TransactionalFileInputStream extends InputStream implements Seriali
 	@Override
 	public void close() throws IOException{
 		super.close();
-		fin.close();
+		if(fin!=null)
+			fin.close();
 	}
 
 

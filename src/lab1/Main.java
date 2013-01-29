@@ -1,10 +1,12 @@
 package lab1;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.event.ListSelectionEvent;
 
@@ -20,21 +22,83 @@ public class Main {
 	static ThreadPool threadPool;
 	static SocketConnection connection;
 	static MasterSlaveControl masterslavecontrol;
+	static List<ProcessStatus> processStatusList;
 	public static void main(String[] args) {
 
 		// TODO Auto-generated method stub
-		if(args.length>0)
-			SocketConnection.SOCKET_PORT=Integer.valueOf(args[0]);
-		threadPool=new ThreadPool(5);
-		connection=new SocketConnection();
+		int poolSize=5;
+		boolean slave=false;
+		Integer masterPort=null;
+		String masterHostname=null;
+		if(args.length>0){
+			for(int i=0;i<args.length-1;i++){
+				if(args[i].equals("-c")){
+					String args2[]=args[i+1].split(":");
+					if(args2.length==2){
+						try{
+							masterPort=Integer.valueOf(args2[1]);
+							masterHostname=args2[0];
+							slave=true;
+						}catch(Exception e){
+							System.out.println("Incorrect master address, please restart.");
+							System.out.println("Format:-c masterHostname:portNum");
+							return;
+						}
+						
+					}
+					else{
+						System.out.println("Incorrect master address, please restart.");
+						System.out.println("Format:-c masterHostname:portNum");
+						return;
+					}
+				}else if(args[i].equals("-p")){
+					try{
+						SocketConnection.SOCKET_PORT=Integer.valueOf(args[i+1]);
+					}catch(Exception e){
+						System.out.println("Invalid port arguement, please restart.");
+						return;
+					}
+				}else if(args[i].equals("-t")){
+					try{
+						poolSize=Integer.valueOf(args[i+1]);
+					}catch(Exception e){
+						System.out.println("Invalid threadpool size arguement, please restart.");
+						return;
+					}
+				}
+				
+				
+			}
+			
+		}
+		processStatusList=new ArrayList<ProcessStatus>();
+		threadPool=new ThreadPool(poolSize);
+		
+		try {
+			connection=new SocketConnection();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			System.out.println("Port confliction, please restart and use '-p portNum' to change port");
+			return;
+		}
 		Thread t=new Thread(connection);
 		t.start();
+		
 		masterslavecontrol=new MasterSlaveControl();
+		if(slave){
+			masterslavecontrol.beSlave(masterHostname,masterPort);
+		}
+		
 		byte[] buffer=new byte[1024];
 		int n=0;
 		
-		System.out.println("Welcome to Process Monitor");
+		System.out.println("Welcome to ProcessManager");
+		System.out.println("Instruction:");
+		System.out.println("  <processName> [arg1] [arg2] ... [argN] (lauch a process)");
+		System.out.println("  ps (prints a list of local running processes and their arguments)");
+		System.out.println("  quit (exits the ProcessManager)");
 		System.out.println("Your address : "+SocketConnection.LOCAL_HOSTNAME+":"+SocketConnection.SOCKET_PORT);
+		
 		while(true){
 			try{
 			n=System.in.read(buffer);
@@ -55,14 +119,10 @@ public class Main {
 	public static void parseComand(String command) {
 		String args[]=command.split("\\s+");
 		if(args[0].equals("ps")){
-			threadPool.showStatus();
-		}else if(args[0].equals("-c")){
-			String args2[]=args[1].split(":");
-			if(args2.length==2)
-				masterslavecontrol.beSlave(args2[0], Integer.valueOf(args2[1]));
-			else{
-				System.out.println("Incorrect address!");
-				System.out.println("Format:-c masterHostname:portNum");
+			synchronized(Main.processStatusList){
+				for(ProcessStatus ps:Main.processStatusList){
+					System.out.println(ps.getInfo());
+				}
 			}
 		}else {
 			
@@ -161,9 +221,16 @@ public class Main {
 			System.out.println();
 			return;
 		}
-		threadPool.addTask((MigratableProcess) instance);
+		MigratableProcess process=(MigratableProcess) instance;
+		threadPool.addTask(process);
 		
-		
+		String nameAndArgs="";
+		for(String s:args){
+			nameAndArgs=nameAndArgs+s+" ";
+		}
+		synchronized(processStatusList){
+			processStatusList.add(new ProcessStatus(process,nameAndArgs,ProcessStatus.WAITING,"" ));
+		}
 		}
 	
 }

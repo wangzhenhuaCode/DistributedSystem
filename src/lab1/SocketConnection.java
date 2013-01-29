@@ -15,7 +15,7 @@ public class SocketConnection implements Runnable{
 	static String LOCAL_HOSTNAME;
 	private ServerSocket serversocket;
 	private MessageHandler messageHandler;
-	public SocketConnection(){
+	public SocketConnection() throws IOException{
 		try {
 			InetAddress addr = InetAddress.getLocalHost();
 			LOCAL_HOSTNAME=addr.getHostAddress();
@@ -24,12 +24,8 @@ public class SocketConnection implements Runnable{
 			e1.printStackTrace();
 		}
 		messageHandler=new MessageHandler();
-		try {
-			serversocket=new ServerSocket(SOCKET_PORT);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		serversocket=new ServerSocket(SOCKET_PORT);
+		
 	}
 	@Override
 	public void run() {

@@ -37,7 +37,8 @@ public class TransactionalFileOutputStream extends OutputStream implements Seria
 	public void close() throws IOException{
 		
 			super.close();
-			fout.close();
+			if(fout!=null)
+				fout.close();
 		
 	}
 	

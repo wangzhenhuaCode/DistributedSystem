@@ -48,6 +48,15 @@ public class ThreadPool {
 					workingNum++;
 				}
 				
+				synchronized(Main.processStatusList){
+					for(ProcessStatus ps:Main.processStatusList){
+						if(work==ps.getProcess()){
+							ps.setStatus(ProcessStatus.RUNNING);
+							break;
+						}
+					}
+				}
+				
 					try{
 						
 						work.run();
@@ -55,7 +64,14 @@ public class ThreadPool {
 					}catch(RuntimeException e){
 						e.printStackTrace();
 					}
-				
+				synchronized(Main.processStatusList){
+						for(ProcessStatus ps:Main.processStatusList){
+							if(work==ps.getProcess()){
+								ps.setStatus(ProcessStatus.FINISHED);
+								break;
+							}
+						}
+				}
 					synchronized(workingNum){
 						workingNum--;
 					}
@@ -140,20 +156,7 @@ public class ThreadPool {
 		}
 		
 	}
-	public void showStatus(){
-		synchronized(taskQueue){
-			MigratableProcess mp;
-			for(int i=0;i<size;i++){
-				mp=workerList.get(i).getWork();
-				if(mp!=null)
-					System.out.println("Process: "+mp.getClass().getName()+"  running.");
-			}
-			for(int i=0;i<taskQueue.size();i++){
-				mp=taskQueue.get(0);
-				System.out.println("Process: "+mp.getClass().getName()+"  waiting.");
-			}
-		}
-	}
+
 	public int getProcessNum(){
 		return workingNum+taskQueue.size();
 	}
