@@ -41,9 +41,11 @@ public class test implements MigratableProcess{
 				}else{
 					break;
 				}
+				out.flush();
 			}
 			System.out.println(name+":  end");
 			stop=false;
+			
 			out.close();
 			try {
 				outFile.close();

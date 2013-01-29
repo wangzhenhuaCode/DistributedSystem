@@ -29,9 +29,16 @@ public class TransactionalFileOutputStream extends OutputStream implements Seria
 	public void write(int arg0) throws IOException {
 		// TODO Auto-generated method stub
 		if(fout==null){
-			fout=new FileOutputStream(filename,false);
+			fout=new FileOutputStream(filename,true);
 		}
 		fout.write(arg0);
+	}
+	@Override
+	public void close() throws IOException{
+		
+			super.close();
+			fout.close();
+		
 	}
 	
 

@@ -37,6 +37,11 @@ public class TransactionalFileInputStream extends InputStream implements Seriali
 		readSize++;
 		return fin.read();
 	}
+	@Override
+	public void close() throws IOException{
+		super.close();
+		fin.close();
+	}
 
 
 }

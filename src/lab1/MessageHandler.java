@@ -227,6 +227,7 @@ public class MessageHandler {
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
 						System.out.println("Connection error!");
+						continue;
 					}
 					try {
 					OutputStream out=currentMessage.getSocket().getOutputStream();
