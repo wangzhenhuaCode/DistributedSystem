@@ -2,17 +2,21 @@ package lab1;
 
 public class ProcessStatus {
 	static final int WAITING=0;
-	static final int RUNNING=1;
-	static final int FINISHED=2;
-	static final int MIGRATED=3;
+	static final int RUNNING=2;
+	static final int FINISHED=3;
+	static final int MIGRATED=1;
+	private String processId;
 	private MigratableProcess process;
 	private String nameAndArgs;
 	private Integer status;
 	private String addtionnal;
+	
 
-	public ProcessStatus(MigratableProcess process, String nameAndArgs,
-			Integer status, String addtionnal) {
+
+	public ProcessStatus(String processId, MigratableProcess process,
+			String nameAndArgs, Integer status, String addtionnal) {
 		super();
+		this.processId = processId;
 		this.process = process;
 		this.nameAndArgs = nameAndArgs;
 		this.status = status;
@@ -62,5 +66,12 @@ public class ProcessStatus {
 			info=info+"("+addtionnal+")";
 		return info;
 	}
+	public String getProcessId() {
+		return processId;
+	}
+	public void setProcessId(String processId) {
+		this.processId = processId;
+	}
+	
 	
 }

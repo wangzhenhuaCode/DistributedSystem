@@ -55,12 +55,12 @@ public class MessageHandler {
 					in.read(longBuffer);
 					long contentlen=getLong(longBuffer);
 					message.setContentLen(contentlen);
-					
+					/*
 					byte longBuffer2[]=new byte[8];
 					in.read(longBuffer2);
 					long filelen=getLong(longBuffer2);
 					message.setFileLen(filelen);
-					
+					*/
 					int bufferSize;
 					
 					if(message.getContentLen()>0){
@@ -78,7 +78,7 @@ public class MessageHandler {
 						}
 						message.setContent(content);
 					}
-					
+					/*
 					if(message.getFileLen()>0){
 						long len=message.getFileLen();
 						String fileName=new Date().getTime()+"_"+currentMessage.hashCode()+".ser";
@@ -98,6 +98,7 @@ public class MessageHandler {
 						message.setFileName(fileName);
 						
 					}
+					*/
 					in.close();
 					currentMessage.getSocket().close();
 					processMessage(currentMessage);
@@ -255,7 +256,7 @@ public class MessageHandler {
 						currentMessage.setContentLen(contentLen);
 					}
 					out.write(longToByte(contentLen));
-					
+					/*
 					String fileName=currentMessage.getFileName();
 					RandomAccessFile inFile=null;
 					long fileLen=0;
@@ -265,9 +266,10 @@ public class MessageHandler {
 						currentMessage.setFileLen(fileLen);
 					}
 					out.write(longToByte(fileLen));
-					if(contentLen>0){
+					
+					if(contentLen>0){*/
 						out.write(currentMessage.getContent().getBytes());
-					}
+					/*}
 					if(fileLen>0){
 						long len=fileLen;
 						int bufferSize;
@@ -283,7 +285,7 @@ public class MessageHandler {
 							len-=bufferSize;
 						}
 						inFile.close();
-					}
+					}*/
 					out.flush();
 					out.close();
 					currentMessage.getSocket().close();

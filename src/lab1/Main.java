@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import javax.swing.event.ListSelectionEvent;
@@ -229,8 +230,9 @@ public class Main {
 		for(String s:args){
 			nameAndArgs=nameAndArgs+s+" ";
 		}
+		String processId=args[0]+"_"+new Date().getTime()+"_"+SocketConnection.LOCAL_HOSTNAME;
 		synchronized(processStatusList){
-			processStatusList.add(new ProcessStatus(process,nameAndArgs,ProcessStatus.WAITING,"" ));
+			processStatusList.add(new ProcessStatus(processId,process,nameAndArgs,ProcessStatus.WAITING,"" ));
 		}
 		}
 	

@@ -12,7 +12,7 @@ public class Message {
 	static final int REQUESTTYPE_SLAVE_CHANGE_PORT=5;
 	
 	private int requestType;
-	private long FileLen;
+	//private long FileLen;
 	private long contentLen;
 	private String content;
 	private String fileName;
@@ -44,12 +44,14 @@ public class Message {
 	public void setSocket(Socket socket) {
 		this.socket = socket;
 	}
+	/*
 	public long getFileLen() {
 		return FileLen;
 	}
 	public void setFileLen(long fileLen) {
 		FileLen = fileLen;
 	}
+	*/
 	public long getContentLen() {
 		return contentLen;
 	}
