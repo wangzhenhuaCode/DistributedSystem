@@ -22,6 +22,7 @@ public class ThreadPool {
 		private MigratableProcess work;
 		private AtomicBoolean mirgationLock=new AtomicBoolean();
 		private AtomicBoolean needMigration=new AtomicBoolean();
+		private volatile boolean isCheckPoint;
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
@@ -56,7 +57,7 @@ public class ThreadPool {
 						}
 					}
 				}
-				
+				while(isCheckPoint){
 					try{
 						
 						work.run();
@@ -64,6 +65,23 @@ public class ThreadPool {
 					}catch(RuntimeException e){
 						e.printStackTrace();
 					}
+					synchronized(mirgationLock){
+						mirgationLock.set(true);
+						mirgationLock.notify();
+					}
+					synchronized(needMigration){
+						while(needMigration.get()){
+							try {
+								needMigration.wait();
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							
+						}
+					}	
+				}
+				
 				synchronized(Main.processStatusList){
 						for(ProcessStatus ps:Main.processStatusList){
 							if(work==ps.getProcess()){
@@ -76,21 +94,7 @@ public class ThreadPool {
 						workingNum--;
 					}
 					
-				synchronized(mirgationLock){
-					mirgationLock.set(true);
-					mirgationLock.notify();
-				}
-				synchronized(needMigration){
-					while(needMigration.get()){
-						try {
-							needMigration.wait();
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						
-					}
-				}
+				
 			}
 			
 		}
