@@ -31,7 +31,7 @@ public class Main {
 
 		// TODO Auto-generated method stub
 		
-		int poolSize=5;
+		int poolSize=4;
 		boolean slave=false;
 		Integer masterPort=null;
 		String masterHostname=null;

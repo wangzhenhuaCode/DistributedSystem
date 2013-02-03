@@ -155,7 +155,7 @@ public class MessageHandler {
 									newMessage.setDestinationPort(Integer.valueOf(args[1]));
 									newMessage.setContent(SocketConnection.LOCAL_HOSTNAME+Message.devide1+SocketConnection.SOCKET_PORT+Message.devide1+process.getProcessId()+Message.devide1+process.getNameAndArgs());
 									sendMessage(newMessage);
-									System.out.println(process.getClass().getName()+" has been migrated to "+args[0]+":"+args[1]);
+									System.out.println(process.getNameAndArgs()+" has been migrated to "+args[0]+":"+args[1]);
 									
 								}
 							}

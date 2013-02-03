@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MasterSlaveControl {
-	private AtomicBoolean isSlave = new AtomicBoolean();
+	
 	private AtomicBoolean isMaster = new AtomicBoolean();
 	private String masterHostname;
 	private int masterPort;
@@ -36,28 +36,18 @@ public class MasterSlaveControl {
 		}
 
 	}
-
+	private Thread salveUpdate;
 	public MasterSlaveControl() {
-		isSlave.set(false);
+
 		isMaster.set(false);
 		slavemap = new HashMap<String, Slave>();
 
-		Thread salveUpdate = new Thread(new Runnable() {
+		salveUpdate = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				while (true) {
-					synchronized (isSlave) {
-						while (!isSlave.get()) {
-							try {
-								isSlave.wait();
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
-					}
+				while(true){
 					Message m = new Message();
 					String content = SocketConnection.LOCAL_HOSTNAME
 							+ Message.devide1 + SocketConnection.SOCKET_PORT
@@ -65,6 +55,9 @@ public class MasterSlaveControl {
 							+ Main.threadPool.getTotalProcess()
 							+ Message.devide1;
 					int len = Main.processStatusList.values().size(), i = 0;
+					
+					synchronized(Main.processStatusList){
+				
 					for (ProcessStatus p : Main.processStatusList.values()) {
 
 						content = content + p.getProcessId() + Message.devide3
@@ -75,22 +68,26 @@ public class MasterSlaveControl {
 						}
 						i++;
 					}
+					}
 					m.setContent(content);
 					m.setRequestType(Message.REQUESTTYPE_SLAVE_UPDATE);
 					m.setDestinationHostName(masterHostname);
 					m.setDestinationPort(masterPort);
 					Main.connection.getMessageHandler().sendMessage(m);
+					
 					try {
 						Thread.sleep(5000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					
 				}
 			}
 
 		});
-		salveUpdate.start();
+		salveUpdate.setPriority(Thread.MAX_PRIORITY);
+		
 		Thread masterCheck = new Thread(new Runnable() {
 
 			@Override
@@ -229,31 +226,13 @@ public class MasterSlaveControl {
 	}
 
 	public void beSlave(String hostName, int port) {
-		synchronized (isSlave) {
+		
 			this.masterHostname = hostName;
 			this.masterPort = port;
-			isSlave.set(true);
-			Message m = new Message();
-			String content = SocketConnection.LOCAL_HOSTNAME + Message.devide1
-					+ SocketConnection.SOCKET_PORT + Message.devide1
-					+ Main.threadPool.getTotalProcess() + Message.devide1;
-			int len = Main.processStatusList.values().size(), i = 0;
-			for (ProcessStatus p : Main.processStatusList.values()) {
-
-				content = content + p.getProcessId() + Message.devide3
-						+ p.getNameAndArgs() + Message.devide3 + p.getStatus();
-				if (i < len - 1) {
-					content = content + Message.devide2;
-				}
-				i++;
-			}
-			m.setContent(content);
-			m.setRequestType(Message.REQUESTTYPE_SLAVE_UPDATE);
-			m.setDestinationHostName(masterHostname);
-			m.setDestinationPort(masterPort);
-			Main.connection.getMessageHandler().sendMessage(m);
-			isSlave.notify();
-		}
+			
+			salveUpdate.start();
+			
+		
 	}
 
 	public void addSlave(Message message) {
@@ -264,6 +243,7 @@ public class MasterSlaveControl {
 		slave.processNum = Integer.valueOf(arg1[2]);
 		slave.updated=true;
 		String arg2[] = null;
+		System.out.println("slave update:"+arg1[0]);
 		if (arg1.length == 4)
 			arg2 = arg1[3].split(Message.devide2);
 
@@ -293,6 +273,7 @@ public class MasterSlaveControl {
 			isMaster.set(true);
 			isMaster.notify();
 		}
+		System.out.println("slave update finish:"+arg1[0]);
 	}
 
 	public boolean getIsMaster() {

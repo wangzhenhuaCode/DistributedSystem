@@ -21,6 +21,7 @@ public class ThreadPool {
 	private List<Worker> workerList;
 	private LinkedList<ProcessStatus> taskQueue;
 	private int size;
+	private Integer workingNum=0;
 	//private Double averageTime;
 
 	class Worker implements Runnable {
@@ -56,7 +57,9 @@ public class ThreadPool {
 				synchronized (isworking) {
 					isworking.set(true);
 				}
-
+				synchronized (workingNum) {
+					workingNum++;
+				}
 				work.setStatus(ProcessStatus.RUNNING);
 				isCheckPoint=true;
 				while (isCheckPoint) {
@@ -86,6 +89,9 @@ public class ThreadPool {
 				}
 		
 				work.setStatus(ProcessStatus.FINISHED);
+				synchronized (workingNum) {
+					workingNum--;
+				}
 				synchronized (isworking) {
 					isworking.set(false);
 				}
@@ -179,17 +185,9 @@ public class ThreadPool {
 	}
 
 	public int getTotalProcess() {
-		int total = 0;
-		synchronized (taskQueue) {
-			for (int i = 0; i < size; i++) {
-				Worker w = workerList.get(i);
-				if (w.isWorking()) {
-					total++;
-				}
-			}
-			total += taskQueue.size();
-		}
-		return total;
+		return workingNum+taskQueue.size();
+		
+		
 	}
 
 	public ProcessStatus getSuspendedProcess() {
@@ -224,58 +222,7 @@ public class ThreadPool {
 
 	public void checkPoint() {
 		synchronized (taskQueue) {
-			for (int i = 0; i < workerList.size(); i++) {
-				Worker w = workerList.get(i);
-				ProcessStatus process = null;
-				if (w.isWorking()) {
-					synchronized (w.needMigration) {
-						w.needMigration.set(true);
-						w.getWork().getProcess().suspend();
-						synchronized (w.mirgationLock) {
-							while (!w.mirgationLock.get()) {
-								try {
-									w.mirgationLock.wait();
-								} catch (InterruptedException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-							}
-							process = w.getWork();
-							w.mirgationLock.set(false);
-							try {
-								FileOutputStream fileOut = new FileOutputStream(
-										process.getProcessId() .replace(".", "_")+ ".ser");
-								ObjectOutputStream out = new ObjectOutputStream(
-										fileOut);
-								out.writeObject(process.getProcess());
-								out.close();
-								fileOut.close();
-								
-							
-								
-								FileInputStream fileIn = new FileInputStream(process.getProcessId() .replace(".", "_")+".ser");
-								ObjectInputStream in = new ObjectInputStream(fileIn);
-								process.setProcess((MigratableProcess) in.readObject());
-								in.close();
-								fileIn.close();
-							
-							} catch (FileNotFoundException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							} catch (ClassNotFoundException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
-						w.isCheckPoint=true;
-						w.needMigration.set(false);
-						w.needMigration.notify();
-					}
-				}
-			}
+			
 			for (int i = 0; i < taskQueue.size(); i++) {
 				ProcessStatus process = taskQueue.get(i);
 				try {
@@ -294,6 +241,58 @@ public class ThreadPool {
 				}
 			}
 
+		}
+		for (int i = 0; i < workerList.size(); i++) {
+			Worker w = workerList.get(i);
+			ProcessStatus process = null;
+			if (w.isWorking()) {
+				synchronized (w.needMigration) {
+					w.needMigration.set(true);
+					w.getWork().getProcess().suspend();
+					synchronized (w.mirgationLock) {
+						while (!w.mirgationLock.get()) {
+							try {
+								w.mirgationLock.wait();
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+						process = w.getWork();
+						w.mirgationLock.set(false);
+						try {
+							FileOutputStream fileOut = new FileOutputStream(
+									process.getProcessId() .replace(".", "_")+ ".ser");
+							ObjectOutputStream out = new ObjectOutputStream(
+									fileOut);
+							out.writeObject(process.getProcess());
+							out.close();
+							fileOut.close();
+							
+						
+							
+							FileInputStream fileIn = new FileInputStream(process.getProcessId() .replace(".", "_")+".ser");
+							ObjectInputStream in = new ObjectInputStream(fileIn);
+							process.setProcess((MigratableProcess) in.readObject());
+							in.close();
+							fileIn.close();
+						
+						} catch (FileNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (ClassNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					w.isCheckPoint=true;
+					w.needMigration.set(false);
+					w.needMigration.notify();
+				}
+			}
 		}
 	}
 
