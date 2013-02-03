@@ -1,12 +1,15 @@
 package lab1;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.event.ListSelectionEvent;
@@ -23,11 +26,11 @@ public class Main {
 	static ThreadPool threadPool;
 	static SocketConnection connection;
 	static MasterSlaveControl masterslavecontrol;
-	static List<ProcessStatus> processStatusList;
+	static HashMap<String,ProcessStatus> processStatusList;
 	public static void main(String[] args) {
 
 		// TODO Auto-generated method stub
-		System.out.println(Long.MAX_VALUE);
+		
 		int poolSize=5;
 		boolean slave=false;
 		Integer masterPort=null;
@@ -73,7 +76,7 @@ public class Main {
 			}
 			
 		}
-		processStatusList=new ArrayList<ProcessStatus>();
+		processStatusList=new HashMap<String,ProcessStatus>();
 		threadPool=new ThreadPool(poolSize);
 		
 		try {
@@ -121,17 +124,30 @@ public class Main {
 	public static void parseComand(String command) {
 		String args[]=command.split("\\s+");
 		if(args[0].equals("ps")){
-			synchronized(Main.processStatusList){
-				for(ProcessStatus ps:Main.processStatusList){
-					System.out.println(ps.getInfo());
-				}
-			}
+			showProcess();
 		}else {
 			
 			launchProcess(args);
 			
 		}
 		
+	}
+	public static void showProcess(){
+		synchronized(Main.processStatusList){
+			boolean isMaster=masterslavecontrol.getIsMaster();
+			if(isMaster){
+				System.out.println("Process Name & Args\tStatus\tMachine");
+			}else{
+				System.out.println("Process Name & Args\tStatus");
+			}
+			for(ProcessStatus ps:Main.processStatusList.values()){
+				if(isMaster){
+					System.out.println(ps.getNameAndArgs()+"\t"+ps.getStatutsInfo()+"\t"+ps.getRunningMachine());
+				}else{
+					System.out.println(ps.getNameAndArgs()+"\t"+ps.getStatutsInfo());
+				}
+			}
+		}
 	}
 	public static void launchProcess(String[] args){
 		String className=args[0];
@@ -224,15 +240,31 @@ public class Main {
 			return;
 		}
 		MigratableProcess process=(MigratableProcess) instance;
-		threadPool.addTask(process);
+		
 		
 		String nameAndArgs="";
 		for(String s:args){
 			nameAndArgs=nameAndArgs+s+" ";
 		}
 		String processId=args[0]+"_"+new Date().getTime()+"_"+SocketConnection.LOCAL_HOSTNAME;
+		ProcessStatus processstatus=new ProcessStatus(processId,process,nameAndArgs,ProcessStatus.WAITING,"Local",new Date());
 		synchronized(processStatusList){
-			processStatusList.add(new ProcessStatus(processId,process,nameAndArgs,ProcessStatus.WAITING,"" ));
+			processStatusList.put(processId,processstatus);
+		}
+		threadPool.addTask(processstatus);
+		String fileName=processstatus.getProcessId().replace(".", "_")+".ser";
+		try {
+			
+			FileOutputStream fileOut=new FileOutputStream(fileName);
+			ObjectOutputStream out=new ObjectOutputStream(fileOut);
+			out.writeObject(processstatus.getProcess());
+			out.close();
+			fileOut.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			
+			e.printStackTrace();
+			return;
 		}
 		}
 	

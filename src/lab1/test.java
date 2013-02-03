@@ -25,6 +25,7 @@ public class test implements MigratableProcess{
 	
 	@Override
 	public void run() {
+		
 		PrintStream out = new PrintStream(outFile);
 		System.out.println(name+":  start");
 			while(!stop){

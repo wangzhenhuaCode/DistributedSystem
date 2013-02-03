@@ -118,29 +118,29 @@ public class MessageHandler {
 				return bb.getLong();
 			}
 			private void processMessage(final Message m){
-				final String[] args=m.getContent().split(" ");
 				switch(m.getRequestType()){
 				case Message.REQUESTTYPE_SLAVE_UPDATE:
-					if(args.length==3)
-						Main.masterslavecontrol.addSlave(args[0], Integer.valueOf(args[1]), Integer.valueOf(args[2]));
+					
+						Main.masterslavecontrol.addSlave(m);
 					break;
 				case Message.REQUESTTYPE_NOTIFY_MIGRATION:
 					
-					if(args.length==3){
+					
 						Thread migrateThread=new Thread(new Runnable(){
 
 							@Override
 							public void run() {
 								// TODO Auto-generated method stub
+								String args[]=m.getContent().split(Message.devide1);
 								Integer num=Integer.valueOf(args[2]);
 								for(int i=1;i<=num;i++){
-									MigratableProcess process=Main.threadPool.getSuspendedProcess();
-									String fileName=(new Date()).getTime()+"_"+m.hashCode()+".ser";
+									ProcessStatus process=Main.threadPool.getSuspendedProcess();
+									String fileName=process.getProcessId().replace(".", "_")+".ser";
 									try {
 										
 										FileOutputStream fileOut=new FileOutputStream(fileName);
 										ObjectOutputStream out=new ObjectOutputStream(fileOut);
-										out.writeObject(process);
+										out.writeObject(process.getProcess());
 										out.close();
 										fileOut.close();
 									} catch (IOException e) {
@@ -151,20 +151,9 @@ public class MessageHandler {
 									}
 									Message newMessage=new Message();
 									newMessage.setRequestType(Message.REQUESTTYPE_MIGRATION);
-									newMessage.setFileName(fileName);
-									synchronized(Main.processStatusList){
-										for(ProcessStatus ps:Main.processStatusList){
-											if(process==ps.getProcess()){
-												newMessage.setContent(SocketConnection.LOCAL_HOSTNAME+"&&"+ps.getNameAndArgs());
-												ps.setStatus(ProcessStatus.MIGRATED);
-												ps.setAddtionnal("migrated to "+args[0]+":"+Integer.valueOf(args[1]));
-												break;
-											}
-										}
-									}
-									
 									newMessage.setDestinationHostName(args[0]);
 									newMessage.setDestinationPort(Integer.valueOf(args[1]));
+									newMessage.setContent(SocketConnection.LOCAL_HOSTNAME+Message.devide1+SocketConnection.SOCKET_PORT+Message.devide1+process.getProcessId()+Message.devide1+process.getNameAndArgs());
 									sendMessage(newMessage);
 									System.out.println(process.getClass().getName()+" has been migrated to "+args[0]+":"+args[1]);
 									
@@ -173,19 +162,52 @@ public class MessageHandler {
 							
 						});
 						migrateThread.start();
-					}
+					
 					break;
-						
+				/*		
 				case Message.REQUESTTYPE_MASTER_UPDATE:
 					if(args.length==2){
 						Main.masterslavecontrol.beSlave(args[0], Integer.valueOf(args[1]));
 					}
 					break;
+					*/
 				case Message.REQUESTTYPE_MIGRATION:
-					if(m.getContent().length()>0 && m.getFileName()!=null&&!m.getFileName().equals("")){
+					{
+							String args[]=m.getContent().split(Message.devide1);
+							MigratableProcess process=null;;
+							try{
+							FileInputStream fileIn = new FileInputStream(args[2].replace(".", "_")+".ser");
+							ObjectInputStream in = new ObjectInputStream(fileIn);
+							process = (MigratableProcess) in.readObject();
+							in.close();
+							fileIn.close();
+							}catch(IOException e){
+								e.printStackTrace();
+								return;
+							} catch (ClassNotFoundException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+								return;
+							}
+							ProcessStatus ps=new ProcessStatus();
+							ps.setProcessId(args[2]);
+							ps.setNameAndArgs(args[3]);
+							ps.setRunningMachine("Local");
+							ps.setStatus(ProcessStatus.WAITING);
+							ps.setProcess(process);
+							synchronized(Main.processStatusList){
+								Main.processStatusList.put(args[2],ps);
+							}
+							Main.threadPool.addTask(ps);
+							System.out.println("Receive '"+ps.getNameAndArgs()+"' from "+args[0]+":"+args[1]);
+					}
+					break;
+				case Message.REQUESTTYPE_RECOVERY:
+					{
+						String args[]=m.getContent().split(Message.devide1);
 						MigratableProcess process=null;;
 						try{
-						FileInputStream fileIn = new FileInputStream(m.getFileName());
+						FileInputStream fileIn = new FileInputStream(args[0].replace(".", "_")+".ser");
 						ObjectInputStream in = new ObjectInputStream(fileIn);
 						process = (MigratableProcess) in.readObject();
 						in.close();
@@ -198,15 +220,18 @@ public class MessageHandler {
 							e.printStackTrace();
 							return;
 						}
-						String args2[]=m.getContent().split("&&");
+						ProcessStatus ps=new ProcessStatus();
+						ps.setProcessId(args[0]);
+						ps.setNameAndArgs(args[1]);
+						ps.setRunningMachine("Local");
+						ps.setStatus(ProcessStatus.WAITING);
+						ps.setProcess(process);
 						synchronized(Main.processStatusList){
-							Main.processStatusList.add(new ProcessStatus(process,args2[1],ProcessStatus.WAITING,"migrated from "+args2[0] ));
+							Main.processStatusList.put(args[0],ps);
 						}
-						Main.threadPool.addTask(process);
-						System.out.println("Receive "+process.getClass().getName()+" from "+args2[0]);
+						Main.threadPool.addTask(ps);
+						System.out.println("Recover '"+ps.getNameAndArgs());
 					}
-					break;
-				case Message.REQUESTTYPE_SLAVE_CHANGE_PORT:
 					break;
 				
 				}

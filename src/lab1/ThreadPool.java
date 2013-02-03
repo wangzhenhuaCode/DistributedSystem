@@ -8,11 +8,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-
 
 public class ThreadPool {
 
@@ -22,26 +21,29 @@ public class ThreadPool {
 	private List<Worker> workerList;
 	private LinkedList<ProcessStatus> taskQueue;
 	private int size;
-	private Integer workingNum;
-	class Worker implements Runnable{
+	//private Double averageTime;
+
+	class Worker implements Runnable {
 		private volatile boolean isStop;
 		private ProcessStatus work;
-		private AtomicBoolean mirgationLock=new AtomicBoolean();
-		private AtomicBoolean needMigration=new AtomicBoolean();
+		private AtomicBoolean mirgationLock = new AtomicBoolean();
+		private AtomicBoolean needMigration = new AtomicBoolean();
 		private volatile boolean isCheckPoint;
+		private AtomicBoolean isworking = new AtomicBoolean();
+
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			
-			while(!isStop){
-				
-				synchronized(mirgationLock){
-					
+
+			while (!isStop) {
+
+				synchronized (mirgationLock) {
+
 					mirgationLock.set(false);
 				}
-					
-				synchronized(taskQueue){
-					while(taskQueue.isEmpty()){
+
+				synchronized (taskQueue) {
+					while (taskQueue.isEmpty()) {
 						try {
 							taskQueue.wait();
 						} catch (InterruptedException e) {
@@ -49,62 +51,62 @@ public class ThreadPool {
 							e.printStackTrace();
 						}
 					}
-					work=taskQueue.poll();
+					work = taskQueue.poll();
 				}
-				synchronized(workingNum){
-					workingNum++;
+				synchronized (isworking) {
+					isworking.set(true);
 				}
-				
-				synchronized(Main.processStatusList){
-					for(ProcessStatus ps:Main.processStatusList){
-						if(work==ps.getProcess()){
-							ps.setStatus(ProcessStatus.RUNNING);
-							break;
-						}
-					}
-				}
-				while(isCheckPoint){
-					try{
+
+				work.setStatus(ProcessStatus.RUNNING);
+				isCheckPoint=true;
+				while (isCheckPoint) {
+					isCheckPoint=false;
+					try {
 						
 						work.getProcess().run();
-						
-					}catch(RuntimeException e){
+
+					} catch (RuntimeException e) {
 						e.printStackTrace();
 					}
-					synchronized(mirgationLock){
+					synchronized (mirgationLock) {
 						mirgationLock.set(true);
 						mirgationLock.notify();
 					}
-					synchronized(needMigration){
-						while(needMigration.get()){
+					synchronized (needMigration) {
+						while (needMigration.get()) {
 							try {
 								needMigration.wait();
 							} catch (InterruptedException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
-							
+
 						}
-					}	
-				}
-				
-				synchronized(Main.processStatusList){
-						for(ProcessStatus ps:Main.processStatusList){
-							if(work==ps.getProcess()){
-								ps.setStatus(ProcessStatus.FINISHED);
-								break;
-							}
-						}
-				}
-					synchronized(workingNum){
-						workingNum--;
 					}
-					
-				
-			}
-			
-		}
+				}
 		
+				work.setStatus(ProcessStatus.FINISHED);
+				synchronized (isworking) {
+					isworking.set(false);
+				}
+
+			}
+
+		}
+
+		public void setWork(ProcessStatus work) {
+			this.work = work;
+		}
+
+		public boolean isWorking() {
+			synchronized (isworking) {
+				if (isworking.get())
+					return true;
+				else
+					return false;
+			}
+		}
+
 		public boolean isCheckPoint() {
 			return isCheckPoint;
 		}
@@ -113,36 +115,38 @@ public class ThreadPool {
 			this.isCheckPoint = isCheckPoint;
 		}
 
-		public Worker(){
-			isStop=false;
+		public Worker() {
+			isStop = false;
 			mirgationLock.set(false);
 			needMigration.set(false);
 		}
-		public void stop(){
-			isStop=true;
+
+		public void stop() {
+			isStop = true;
 		}
+
 		public ProcessStatus getWork() {
 			return work;
 		}
-		
+
 	}
-	
-	public ThreadPool(int size){
-		this.size=size;
-		workingNum=0;
-		workerList=new ArrayList<Worker>();
-		taskQueue=new LinkedList<ProcessStatus>();
-		for(int i=0;i<size;i++){
-			Worker worker=new Worker();
+
+	public ThreadPool(int size) {
+		this.size = size;
+		workerList = new ArrayList<Worker>();
+		taskQueue = new LinkedList<ProcessStatus>();
+		for (int i = 0; i < size; i++) {
+			Worker worker = new Worker();
 			workerList.add(worker);
-			Thread t=new Thread(worker);
+			Thread t = new Thread(worker);
 			t.start();
 		}
-		Thread checkThread=new Thread(new Runnable(){
+		Thread checkThread = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
+				while(true){
 				checkPoint();
 				try {
 					Thread.sleep(15000);
@@ -150,41 +154,58 @@ public class ThreadPool {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				}
 			}
-			
+
 		});
 		checkThread.start();
 	}
-	
-	public void addTask(ProcessStatus mp){
-		synchronized(taskQueue){
+
+	public void addTask(ProcessStatus mp) {
+		synchronized (taskQueue) {
 			taskQueue.add(mp);
 			taskQueue.notify();
 		}
 	}
-	public void closePool(){
+
+	public void closePool() {
 		Worker w;
-		for(int i=0;i<size;i++){
-			w=workerList.get(i);
+		for (int i = 0; i < size; i++) {
+			w = workerList.get(i);
 			w.getWork().getProcess().suspend();
 			w.stop();
 		}
-		
+
 	}
 
-	public int getProcessNum(){
-		return workingNum+taskQueue.size();
+	public int getTotalProcess() {
+		int total = 0;
+		synchronized (taskQueue) {
+			for (int i = 0; i < size; i++) {
+				Worker w = workerList.get(i);
+				if (w.isWorking()) {
+					total++;
+				}
+			}
+			total += taskQueue.size();
+		}
+		return total;
 	}
-	public ProcessStatus getSuspendedProcess(){
-		int n=(int) (Math.random()*workingNum);
-		ProcessStatus process=null;
-		Worker w=workerList.get(n);
-		
-		synchronized(w.needMigration){
+
+	public ProcessStatus getSuspendedProcess() {
+		int n = (int) (Math.random() * size);
+		Worker w = workerList.get(n);
+		while (!w.isWorking()) {
+			n = (int) (Math.random() * size);
+			w = workerList.get(n);
+		}
+		ProcessStatus process = null;
+
+		synchronized (w.needMigration) {
 			w.needMigration.set(true);
 			w.getWork().getProcess().suspend();
-			synchronized(w.mirgationLock){
-				while(!w.mirgationLock.get()){
+			synchronized (w.mirgationLock) {
+				while (!w.mirgationLock.get()) {
 					try {
 						w.mirgationLock.wait();
 					} catch (InterruptedException e) {
@@ -192,7 +213,7 @@ public class ThreadPool {
 						e.printStackTrace();
 					}
 				}
-				process=w.getWork();
+				process = w.getWork();
 				w.mirgationLock.set(false);
 			}
 			w.needMigration.set(false);
@@ -200,48 +221,67 @@ public class ThreadPool {
 		}
 		return process;
 	}
-	public void checkPoint(){
-		synchronized(taskQueue){
-			for(int i=0;i<workerList.size();i++){
-				Worker w=workerList.get(i);
-				ProcessStatus process=null;
-				synchronized(w.needMigration){
-					w.needMigration.set(true);
-					w.getWork().getProcess().suspend();
-					synchronized(w.mirgationLock){
-						while(!w.mirgationLock.get()){
+
+	public void checkPoint() {
+		synchronized (taskQueue) {
+			for (int i = 0; i < workerList.size(); i++) {
+				Worker w = workerList.get(i);
+				ProcessStatus process = null;
+				if (w.isWorking()) {
+					synchronized (w.needMigration) {
+						w.needMigration.set(true);
+						w.getWork().getProcess().suspend();
+						synchronized (w.mirgationLock) {
+							while (!w.mirgationLock.get()) {
+								try {
+									w.mirgationLock.wait();
+								} catch (InterruptedException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+							}
+							process = w.getWork();
+							w.mirgationLock.set(false);
 							try {
-								w.mirgationLock.wait();
-							} catch (InterruptedException e) {
+								FileOutputStream fileOut = new FileOutputStream(
+										process.getProcessId() .replace(".", "_")+ ".ser");
+								ObjectOutputStream out = new ObjectOutputStream(
+										fileOut);
+								out.writeObject(process.getProcess());
+								out.close();
+								fileOut.close();
+								
+							
+								
+								FileInputStream fileIn = new FileInputStream(process.getProcessId() .replace(".", "_")+".ser");
+								ObjectInputStream in = new ObjectInputStream(fileIn);
+								process.setProcess((MigratableProcess) in.readObject());
+								in.close();
+								fileIn.close();
+							
+							} catch (FileNotFoundException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (ClassNotFoundException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 						}
-						process=w.getWork();
-						w.mirgationLock.set(false);
-						try {
-							FileOutputStream fileOut = new FileOutputStream(process.getProcessId());
-							ObjectOutputStream out=new ObjectOutputStream(fileOut);
-							out.writeObject(process.getProcess());
-							out.close();
-							fileOut.close();
-						} catch (FileNotFoundException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+						w.isCheckPoint=true;
+						w.needMigration.set(false);
+						w.needMigration.notify();
 					}
-					w.needMigration.set(false);
-					w.needMigration.notify();
 				}
 			}
-			for(int i=0;i<taskQueue.size();i++){
-				ProcessStatus process=taskQueue.get(i);
+			for (int i = 0; i < taskQueue.size(); i++) {
+				ProcessStatus process = taskQueue.get(i);
 				try {
-					FileOutputStream fileOut = new FileOutputStream(process.getProcessId());
-					ObjectOutputStream out=new ObjectOutputStream(fileOut);
+					FileOutputStream fileOut = new FileOutputStream(
+							process.getProcessId() + ".ser");
+					ObjectOutputStream out = new ObjectOutputStream(fileOut);
 					out.writeObject(process.getProcess());
 					out.close();
 					fileOut.close();
@@ -253,8 +293,8 @@ public class ThreadPool {
 					e.printStackTrace();
 				}
 			}
+
 		}
 	}
-	
- 
+
 }
