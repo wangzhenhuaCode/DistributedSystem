@@ -71,7 +71,7 @@ public class TextScraper implements MigratableProcess {
 		}
 	}
 
-	public TextScraper() {
+	public TextScraper(String url) {
 		i1 = 0;
 		i2 = 0;
 		j1 = 0;
@@ -81,7 +81,7 @@ public class TextScraper implements MigratableProcess {
 		stop = false;
 		try {
 			outFile = new TransactionalFileOutputStream(
-					"CNN_Headline_News.cnn", false);
+					url, false);
 		} catch (IOException ex) {
 			// TODO Auto-generated catch block
 			ex.printStackTrace();
