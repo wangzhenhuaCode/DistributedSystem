@@ -119,6 +119,7 @@ public class Main {
 				
 			}
 		}
+		System.exit(0);
 	}
 
 	public static void parseComand(String command) {

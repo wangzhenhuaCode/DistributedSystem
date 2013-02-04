@@ -5,6 +5,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class ZipFileProcess implements MigratableProcess {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private TransactionalFileInputStream inFile;
 	private TransactionalFileOutputStream outFile;
 	private String unzippedFile;
