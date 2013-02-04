@@ -23,9 +23,9 @@ public class TextScraper implements MigratableProcess {
 	private static final long serialVersionUID = 1L;
 	private volatile boolean stop = false;
 	private TransactionalFileOutputStream outFile;
+	private Integer i1, i2, j1, j2, k1, k2;
 
-	private int i1, i2, j1, j2, k1, k2;
-
+	@SuppressWarnings("finally")
 	public String getData(String url) throws Exception {
 		HttpURLConnection connection = null;
 		BufferedReader br = null;
@@ -40,7 +40,7 @@ public class TextScraper implements MigratableProcess {
 			connection = (HttpURLConnection) address.openConnection();
 			connection.setRequestMethod("GET");
 			connection.setDoOutput(true);
-			connection.setReadTimeout(100000);
+			connection.setReadTimeout(10000);
 			connection.connect();
 
 			// recieve data from server
@@ -64,8 +64,8 @@ public class TextScraper implements MigratableProcess {
 		} finally {
 			// close connection
 			connection.disconnect();
-			br = null;
-			sb = null;
+			br.close();
+			
 			connection = null;
 			return data;
 		}
@@ -79,13 +79,6 @@ public class TextScraper implements MigratableProcess {
 		k1 = 0;
 		k2 = 0;
 		stop = false;
-	}
-
-	@Override
-	public void run() {
-		// TODO Auto-generated method stub
-		String query = "http://www.cnn.com/";
-		String data = null;
 		try {
 			outFile = new TransactionalFileOutputStream(
 					"CNN_Headline_News.cnn", false);
@@ -93,6 +86,14 @@ public class TextScraper implements MigratableProcess {
 			// TODO Auto-generated catch block
 			ex.printStackTrace();
 		}
+	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		String query = "http://www.cnn.com/";
+		String data = null;
+		
 		PrintStream out = new PrintStream(outFile);
 		try {
 			data = getData(query);
@@ -109,15 +110,15 @@ public class TextScraper implements MigratableProcess {
 		Document document = Jsoup.parse(data);
 
 		Elements firstpage1 = document.getElementsByClass("cnn_mtt1content");
-		i1=0;
+		
 		while (i1 < firstpage1.size()) {
 			Element bin1 = firstpage1.get(i1);
 			Elements newsList = bin1.getElementsByTag("li");
-			j1=0;
+			
 			while (j1 < newsList.size()) {
 				Element e = newsList.get(j1);
 				Elements news = e.getElementsByTag("a");
-				k1=0;
+				
 				while (k1 < news.size()) {
 					Element ee = news.get(k1);
 					String[] url = ee.toString().split("\"");
@@ -146,7 +147,8 @@ public class TextScraper implements MigratableProcess {
 
 						out.println(title);
 						out.println(filein);
-
+						out.flush();
+						System.out.println("get article: "+title);
 					}
 					k1++;
 					if (stop) {
@@ -162,21 +164,23 @@ public class TextScraper implements MigratableProcess {
 					}
 
 				}
+				k1=0;
 				j1++;
 			}
+			j1=0;
 			i1++;
 
 		}
 		Elements firstpage2 = document.getElementsByClass("cnn_sectbincntnt2");
-		i2=0;
+		
 		while (i2 < firstpage2.size()) {
 			Element bin2 = firstpage2.get(i2);
 			Elements newsList = bin2.getElementsByTag("li");
-			j2=0;
+			
 			while (j2 < newsList.size()) {
 				Element e = newsList.get(j2);
 				Elements news = e.getElementsByTag("a");
-				k2=0;
+			
 				while (k2 < news.size()) {
 					Element ee = news.get(k2);
 					String[] url = ee.toString().split("\"");
@@ -206,12 +210,15 @@ public class TextScraper implements MigratableProcess {
 						String filein = secondpage.text();
 						out.println(title);
 						out.println(filein);
-
+						out.flush();
+						System.out.println("get article: "+title);
 					}
 					k2++;
 					if (stop) {
+						out.flush();
 						out.close();
 						try {
+							outFile.flush();
 							outFile.close();
 						} catch (IOException ex2) {
 							// TODO Auto-generated catch block
@@ -222,13 +229,17 @@ public class TextScraper implements MigratableProcess {
 					}
 
 				}
+				k2=0;
 				j2++;
 			}
+			j2=0;
 			i2++;
 
 		}
+		out.flush();
 		out.close();
 		try {
+			outFile.flush();
 			outFile.close();
 		} catch (IOException ex2) {
 			// TODO Auto-generated catch block

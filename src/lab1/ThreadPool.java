@@ -294,6 +294,7 @@ public class ThreadPool {
 				}
 			}
 		}
+		System.out.println("check point");
 	}
 
 }
