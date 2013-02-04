@@ -1,25 +1,30 @@
 package lab1;
 
-import java.io.FileInputStream;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.io.Serializable;
 
 
 public class TransactionalFileInputStream extends InputStream implements Serializable{
 	
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private String fileName;
 	private Integer readSize;
-	private transient FileInputStream fin;
+	private transient RandomAccessFile fin;
 	public TransactionalFileInputStream(String fileName) {
 		super();
 		this.fileName = fileName;
 		readSize=0;
 		
 		try {
-			fin=new FileInputStream(fileName);
+			fin=new RandomAccessFile(fileName,"r");
 			
 		}catch(IOException e) {
 			// TODO Auto-generated catch block
@@ -31,8 +36,8 @@ public class TransactionalFileInputStream extends InputStream implements Seriali
 	public int read() throws IOException {
 		// TODO Auto-generated method stub
 		if(fin==null){
-			fin=new FileInputStream(fileName);
-			fin.skip(readSize);
+			fin=new RandomAccessFile(fileName,"r");
+			fin.seek(readSize);
 		}
 		readSize++;
 		return fin.read();

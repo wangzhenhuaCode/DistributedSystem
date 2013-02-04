@@ -74,7 +74,7 @@ public class ProcessStatus {
 	}
 	public String getStatutsInfo(){
 		if(status==WAITING)return "Waiting";
-		else if(status==RUNNING)return "Returning";
+		else if(status==RUNNING)return "Running";
 		else if(status==MIGRATED)return "Migrated";
 		else return "Finished";
 	}
