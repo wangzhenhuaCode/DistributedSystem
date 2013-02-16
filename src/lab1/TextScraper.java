@@ -70,12 +70,14 @@ public class TextScraper implements MigratableProcess {
 			return data;
 		}
 	}
+
 	
 	public TextScraper(String[] args) throws Exception{
 		if(args.length!=1){
 			throw new Exception("Invalid argument, please input the output filename");
 	
 		}
+
 		i1 = 0;
 		i2 = 0;
 		j1 = 0;
@@ -84,8 +86,8 @@ public class TextScraper implements MigratableProcess {
 		k2 = 0;
 		stop = false;
 		try {
-			outFile = new TransactionalFileOutputStream(
-					args[0], false);
+			outFile = new TransactionalFileOutputStream(args[0], false);
+
 		} catch (IOException ex) {
 			// TODO Auto-generated catch block
 			ex.printStackTrace();
