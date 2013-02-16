@@ -16,7 +16,7 @@ public class TransactionalFileInputStream extends InputStream implements Seriali
 	 */
 	private static final long serialVersionUID = 1L;
 	private String fileName;
-	private Integer readSize;
+	private long readSize;
 	private transient RandomAccessFile fin;
 	public TransactionalFileInputStream(String fileName) {
 		super();

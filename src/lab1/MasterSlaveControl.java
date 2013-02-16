@@ -11,6 +11,15 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MasterSlaveControl {
+	/*
+	 * This class is responsible for the regular interaction between slave and
+	 * master. If the client is a slave it will instantiate a thread that update
+	 * its status to master every 5 seconds. Every client has a master tread, but it is blocked
+	 * until it has slave. The master thread will check slave status every 7
+	 * seconds, and let client, which has most task, migrate process to the client which
+	 * has the least tasks.
+	 */
+	
 	
 	private AtomicBoolean isMaster = new AtomicBoolean();
 	private String masterHostname;
@@ -36,7 +45,9 @@ public class MasterSlaveControl {
 		}
 
 	}
+
 	private Thread salveUpdate;
+
 	public MasterSlaveControl() {
 
 		isMaster.set(false);
@@ -47,7 +58,7 @@ public class MasterSlaveControl {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				while(true){
+				while (true) {
 					Message m = new Message();
 					String content = SocketConnection.LOCAL_HOSTNAME
 							+ Message.devide1 + SocketConnection.SOCKET_PORT
@@ -55,39 +66,39 @@ public class MasterSlaveControl {
 							+ Main.threadPool.getTotalProcess()
 							+ Message.devide1;
 					int len = Main.processStatusList.values().size(), i = 0;
-					
-					synchronized(Main.processStatusList){
-				
-					for (ProcessStatus p : Main.processStatusList.values()) {
 
-						content = content + p.getProcessId() + Message.devide3
-								+ p.getNameAndArgs() + Message.devide3
-								+ p.getStatus();
-						if (i < len - 1) {
-							content = content + Message.devide2;
+					synchronized (Main.processStatusList) {
+
+						for (ProcessStatus p : Main.processStatusList.values()) {
+
+							content = content + p.getProcessId()
+									+ Message.devide3 + p.getNameAndArgs()
+									+ Message.devide3 + p.getStatus();
+							if (i < len - 1) {
+								content = content + Message.devide2;
+							}
+							i++;
 						}
-						i++;
-					}
 					}
 					m.setContent(content);
 					m.setRequestType(Message.REQUESTTYPE_SLAVE_UPDATE);
 					m.setDestinationHostName(masterHostname);
 					m.setDestinationPort(masterPort);
 					Main.connection.getMessageHandler().sendMessage(m);
-					
+
 					try {
 						Thread.sleep(5000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					
+
 				}
 			}
 
 		});
 		salveUpdate.setPriority(Thread.MAX_PRIORITY);
-		
+
 		Thread masterCheck = new Thread(new Runnable() {
 
 			@Override
@@ -138,7 +149,8 @@ public class MasterSlaveControl {
 					for (int i = 0; i < list.size(); i++) {
 						Slave s = list.get(i);
 						if (s.updated == false) {
-							System.out.println(s.hostname+":"+s.port+" disconnect!");
+							System.out.println(s.hostname + ":" + s.port
+									+ " disconnect!");
 							for (ProcessStatus ps : Main.processStatusList
 									.values()) {
 								if (ps.getRunningMachine().equals(
@@ -226,13 +238,12 @@ public class MasterSlaveControl {
 	}
 
 	public void beSlave(String hostName, int port) {
-		
-			this.masterHostname = hostName;
-			this.masterPort = port;
-			
-			salveUpdate.start();
-			
-		
+
+		this.masterHostname = hostName;
+		this.masterPort = port;
+
+		salveUpdate.start();
+
 	}
 
 	public void addSlave(Message message) {
@@ -241,9 +252,9 @@ public class MasterSlaveControl {
 		slave.hostname = arg1[0];
 		slave.port = Integer.valueOf(arg1[1]);
 		slave.processNum = Integer.valueOf(arg1[2]);
-		slave.updated=true;
+		slave.updated = true;
 		String arg2[] = null;
-		System.out.println("slave update:"+arg1[0]);
+
 		if (arg1.length == 4)
 			arg2 = arg1[3].split(Message.devide2);
 
@@ -256,7 +267,7 @@ public class MasterSlaveControl {
 				synchronized (Main.processStatusList) {
 					for (int i = 0; i < arg2.length; i++) {
 						String arg3[] = arg2[i].split(Message.devide3);
-						if (!arg3[2].equals(ProcessStatus.MIGRATED)) {
+						if (Integer.valueOf(arg3[2]) != ProcessStatus.MIGRATED) {
 
 							ProcessStatus ps = new ProcessStatus();
 							ps.setProcessId(arg3[0]);
@@ -273,7 +284,7 @@ public class MasterSlaveControl {
 			isMaster.set(true);
 			isMaster.notify();
 		}
-		System.out.println("slave update finish:"+arg1[0]);
+
 	}
 
 	public boolean getIsMaster() {

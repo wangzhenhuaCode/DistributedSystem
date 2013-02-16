@@ -15,14 +15,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ThreadPool {
 
-	/**
-	 * @param args
+	/*
+	 * This class is a thread pool. When the running process number reaches its
+	 * max capacity, new arriving process has to wait in the queue. The max
+	 * capacity defines the number of worker. Each worker can process one
+	 * migratable process. After the process finished or migrated, the worker
+	 * retrieve another process from the queue. This class also contains a
+	 * thread which serialize all the process haven't been finished to make a
+	 * check point.
 	 */
 	private List<Worker> workerList;
 	private LinkedList<ProcessStatus> taskQueue;
 	private int size;
-	private Integer workingNum=0;
-	//private Double averageTime;
+	private Integer workingNum = 0;
+
+	// private Double averageTime;
 
 	class Worker implements Runnable {
 		private volatile boolean isStop;
@@ -61,11 +68,11 @@ public class ThreadPool {
 					workingNum++;
 				}
 				work.setStatus(ProcessStatus.RUNNING);
-				isCheckPoint=true;
+				isCheckPoint = true;
 				while (isCheckPoint) {
-					isCheckPoint=false;
+					isCheckPoint = false;
 					try {
-						
+
 						work.getProcess().run();
 
 					} catch (RuntimeException e) {
@@ -87,7 +94,7 @@ public class ThreadPool {
 						}
 					}
 				}
-		
+
 				work.setStatus(ProcessStatus.FINISHED);
 				synchronized (workingNum) {
 					workingNum--;
@@ -152,14 +159,14 @@ public class ThreadPool {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
-				while(true){
-				checkPoint();
-				try {
-					Thread.sleep(15000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				while (true) {
+					checkPoint();
+					try {
+						Thread.sleep(15000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
 
@@ -185,9 +192,8 @@ public class ThreadPool {
 	}
 
 	public int getTotalProcess() {
-		return workingNum+taskQueue.size();
-		
-		
+		return workingNum + taskQueue.size();
+
 	}
 
 	public ProcessStatus getSuspendedProcess() {
@@ -222,12 +228,13 @@ public class ThreadPool {
 
 	public void checkPoint() {
 		synchronized (taskQueue) {
-			
+
 			for (int i = 0; i < taskQueue.size(); i++) {
 				ProcessStatus process = taskQueue.get(i);
 				try {
 					FileOutputStream fileOut = new FileOutputStream(
-							process.getProcessId() + ".ser");
+							Main.workingDirectory + process.getProcessId()
+									+ ".ser");
 					ObjectOutputStream out = new ObjectOutputStream(fileOut);
 					out.writeObject(process.getProcess());
 					out.close();
@@ -262,21 +269,25 @@ public class ThreadPool {
 						w.mirgationLock.set(false);
 						try {
 							FileOutputStream fileOut = new FileOutputStream(
-									process.getProcessId() .replace(".", "_")+ ".ser");
+									Main.workingDirectory
+											+ process.getProcessId().replace(
+													".", "_") + ".ser");
 							ObjectOutputStream out = new ObjectOutputStream(
 									fileOut);
 							out.writeObject(process.getProcess());
 							out.close();
 							fileOut.close();
-							
-						
-							
-							FileInputStream fileIn = new FileInputStream(process.getProcessId() .replace(".", "_")+".ser");
+
+							FileInputStream fileIn = new FileInputStream(
+									Main.workingDirectory
+											+ process.getProcessId().replace(
+													".", "_") + ".ser");
 							ObjectInputStream in = new ObjectInputStream(fileIn);
-							process.setProcess((MigratableProcess) in.readObject());
+							process.setProcess((MigratableProcess) in
+									.readObject());
 							in.close();
 							fileIn.close();
-						
+
 						} catch (FileNotFoundException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -288,13 +299,13 @@ public class ThreadPool {
 							e.printStackTrace();
 						}
 					}
-					w.isCheckPoint=true;
+					w.isCheckPoint = true;
 					w.needMigration.set(false);
 					w.needMigration.notify();
 				}
 			}
 		}
-		System.out.println("check point");
+		// System.out.println("check point");
 	}
 
 }

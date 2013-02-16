@@ -17,8 +17,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class TextScraper implements MigratableProcess {
-	/**
-	 * 
+	/*
+	 * This class is a migratable process for scrapering headline news on CNN.com and output to a file.
 	 */
 	private static final long serialVersionUID = 1L;
 	private volatile boolean stop = false;
@@ -70,8 +70,12 @@ public class TextScraper implements MigratableProcess {
 			return data;
 		}
 	}
-
-	public TextScraper() {
+	
+	public TextScraper(String[] args) throws Exception{
+		if(args.length!=1){
+			throw new Exception("Invalid argument, please input the output filename");
+	
+		}
 		i1 = 0;
 		i2 = 0;
 		j1 = 0;
@@ -81,7 +85,7 @@ public class TextScraper implements MigratableProcess {
 		stop = false;
 		try {
 			outFile = new TransactionalFileOutputStream(
-					"CNN_Headline_News.cnn", false);
+					args[0], false);
 		} catch (IOException ex) {
 			// TODO Auto-generated catch block
 			ex.printStackTrace();
@@ -99,7 +103,7 @@ public class TextScraper implements MigratableProcess {
 			data = getData(query);
 		} catch (Exception e2) {
 			// TODO Auto-generated catch block
-			out.println("Connection error");
+			out.println("Connection timeout");
 		}
 
 		if (data == null) {
@@ -130,6 +134,9 @@ public class TextScraper implements MigratableProcess {
 							data2 = getData(query2);
 						} catch (Exception e1) {
 							// TODO Auto-generated catch block
+							out.println("Connection timeout");
+							out.println();
+							out.flush();
 							k1++;
 							continue;
 						}
@@ -148,7 +155,7 @@ public class TextScraper implements MigratableProcess {
 						out.println(title);
 						out.println(filein);
 						out.flush();
-						System.out.println("get article: "+title);
+						
 					}
 					k1++;
 					if (stop) {
@@ -192,6 +199,9 @@ public class TextScraper implements MigratableProcess {
 							data2 = getData(query2);
 						} catch (Exception e1) {
 							// TODO Auto-generated catch block
+							out.println("Connection timeout");
+							out.println();
+							out.flush();
 							k2++;
 							continue;
 						}
@@ -211,7 +221,7 @@ public class TextScraper implements MigratableProcess {
 						out.println(title);
 						out.println(filein);
 						out.flush();
-						System.out.println("get article: "+title);
+						
 					}
 					k2++;
 					if (stop) {

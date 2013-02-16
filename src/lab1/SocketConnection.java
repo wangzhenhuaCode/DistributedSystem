@@ -6,34 +6,37 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class SocketConnection implements Runnable{
+public class SocketConnection implements Runnable {
 
-	/**
-	 * @param args
+	/*
+	 * This class is a thread. It is for listening new socket connection. It
+	 * also initialzed the message handler
 	 */
-	static int SOCKET_PORT=9213;
+	static int SOCKET_PORT = 9213;
 	static String LOCAL_HOSTNAME;
 	private ServerSocket serversocket;
 	private MessageHandler messageHandler;
-	public SocketConnection() throws IOException{
+
+	public SocketConnection() throws IOException {
 		try {
 			InetAddress addr = InetAddress.getLocalHost();
-			LOCAL_HOSTNAME=addr.getHostAddress();
+			LOCAL_HOSTNAME = addr.getHostAddress();
 		} catch (UnknownHostException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		messageHandler=new MessageHandler();
-		serversocket=new ServerSocket(SOCKET_PORT);
-		
+		messageHandler = new MessageHandler();
+		serversocket = new ServerSocket(SOCKET_PORT);
+
 	}
+
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		while(true){
+		while (true) {
 			try {
-				Socket s=serversocket.accept();
-				Message m=new Message();
+				Socket s = serversocket.accept();
+				Message m = new Message();
 				m.setSocket(s);
 				messageHandler.processReceivedNewMessage(m);
 			} catch (IOException e) {
@@ -42,6 +45,7 @@ public class SocketConnection implements Runnable{
 			}
 		}
 	}
+
 	public MessageHandler getMessageHandler() {
 		return messageHandler;
 	}
